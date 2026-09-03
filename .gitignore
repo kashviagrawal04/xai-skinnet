@@ -1,0 +1,10 @@
+data/raw/
+data/*.zip
+runs/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.DS_Store
+*.pt
+*.pth
+kaggle.json
