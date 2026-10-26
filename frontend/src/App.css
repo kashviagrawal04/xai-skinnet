@@ -515,3 +515,5 @@ body {
   flex: 1 1 90px; padding: 8px 10px; border-radius: 8px; font: inherit;
   border: 1px solid rgba(128,128,128,0.4); background: transparent; color: inherit;
 }
+
+.branch-note { font-size: 0.8rem; opacity: 0.7; margin: 10px 0 0; }

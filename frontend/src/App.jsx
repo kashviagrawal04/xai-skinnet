@@ -402,6 +402,16 @@ export default function App() {
                 predictedClass={result.predicted_class}
               />
 
+              {result.branch_weights && (
+                <p className="branch-note">
+                  Model relied on: CNN {Math.round(result.branch_weights.cnn * 100)}% ·
+                  ViT {Math.round(result.branch_weights.vit * 100)}%
+                  {result.branch_weights.metadata > 0 &&
+                    ` · Patient details ${Math.round(result.branch_weights.metadata * 100)}%`}
+                  . The heatmap blends both image branches in these proportions.
+                </p>
+              )}
+
               <ShapChart features={result.shap_top_features} />
             </div>
           )}
