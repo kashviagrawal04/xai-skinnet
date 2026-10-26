@@ -1,329 +1,363 @@
-# XAI-SkinNet
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--                        XAI-SkinNet                           -->
+<!-- ══════════════════════════════════════════════════════════════ -->
 
-Explainable AI for Multi-Class Skin Lesion Classification using a hybrid
-CNN (EfficientNet-B4) + Vision Transformer (ViT-B/16) architecture with
-attention-gated feature fusion, Grad-CAM spatial explanations, and SHAP
-feature attribution.
+<div align="center">
 
-Suhani Singhania, Kashvi Agrawal, Riya Jain — VIT Vellore
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:1a0b2e,50:7b2ff7,100:f107a3&height=220&section=header&text=XAI-SkinNet&fontSize=70&fontColor=ffffff&animation=fadeIn&fontAlignY=35&desc=Explainable%20Hybrid%20CNN%20%2B%20Vision%20Transformer%20for%20Skin%20Lesion%20Diagnosis&descAlignY=55&descSize=18" width="100%"/>
 
-This repo is the reference implementation backing the IEEE paper /
-project review deck. It's written to run unmodified on **Google Colab**,
-**Kaggle Notebooks**, or a **local/lab GPU machine** — nothing is
-hardcoded to one environment.
+<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=700&size=22&duration=3000&pause=800&color=F107A3&center=true&vCenter=true&width=700&lines=EfficientNet-B4+%2B+ViT-B%2F16+%E2%9F%B6+Attention-Gated+Fusion;Grad-CAM+spatial+maps+%2B+SHAP+attributions;7-class+HAM10000+%7C+cross-dataset+on+ISIC+2019;Not+a+black+box.+Every+prediction+explains+itself." alt="Typing SVG" />
 
-## 1. Setup
+<br/><br/>
+
+<a href="#"><img src="https://img.shields.io/badge/PyTorch-2.x-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white&labelColor=1a0b2e"/></a>
+<a href="#"><img src="https://img.shields.io/badge/FastAPI-backend-009688?style=for-the-badge&logo=fastapi&logoColor=white&labelColor=1a0b2e"/></a>
+<a href="#"><img src="https://img.shields.io/badge/React_+_Vite-frontend-61DAFB?style=for-the-badge&logo=react&logoColor=white&labelColor=1a0b2e"/></a>
+<a href="#"><img src="https://img.shields.io/badge/Colab_%7C_Kaggle_%7C_Local-runs_anywhere-F9AB00?style=for-the-badge&logo=googlecolab&logoColor=white&labelColor=1a0b2e"/></a>
+
+<br/>
+
+<img src="https://img.shields.io/badge/dataset-HAM10000-7b2ff7?style=flat-square&labelColor=1a0b2e"/>
+<img src="https://img.shields.io/badge/classes-7-7b2ff7?style=flat-square&labelColor=1a0b2e"/>
+<img src="https://img.shields.io/badge/XAI-Grad--CAM_+_SHAP-f107a3?style=flat-square&labelColor=1a0b2e"/>
+<img src="https://img.shields.io/badge/paper-IEEE_format-f107a3?style=flat-square&labelColor=1a0b2e"/>
+
+<br/><br/>
+
+**Suhani Singhania** &nbsp;·&nbsp; **Kashvi Agrawal** &nbsp;·&nbsp; **Riya Jain**
+<br/>
+<sub>Vellore Institute of Technology, Vellore</sub>
+
+</div>
+
+<img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" width="100%"/>
+
+## 🧬 &nbsp;What this is
+
+Dermoscopic lesion classifiers are accurate and untrusted — a dermatologist won't act on a
+softmax score. **XAI-SkinNet** pairs a convolutional branch (local texture, pigment networks,
+border irregularity) with a transformer branch (global lesion context) through an
+**attention-gated fusion module**, then makes every prediction defend itself with
+**Grad-CAM** heatmaps and **SHAP** attributions.
+
+This repo is the reference implementation backing the paper and the project review deck.
+Nothing is hardcoded to one environment — it runs unmodified on Colab, Kaggle, or a lab GPU.
+
+<img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" width="100%"/>
+
+## 🏗️ &nbsp;Architecture
+
+```mermaid
+flowchart LR
+    A["🔬 Dermoscopic Image<br/>224 × 224 × 3"] --> B["EfficientNet-B4<br/><i>local texture</i>"]
+    A --> C["ViT-B/16<br/><i>global context</i>"]
+    B --> D{{"⚡ Attention-Gated<br/>Fusion"}}
+    C --> D
+    D --> E["Classifier Head<br/>7 classes"]
+    E --> F["🎯 Prediction<br/>+ confidence"]
+    B -.Grad-CAM hook.-> G["🔥 Spatial Heatmap"]
+    D -.DeepExplainer.-> H["📊 SHAP Waterfall"]
+
+    style A fill:#1a0b2e,stroke:#7b2ff7,color:#fff
+    style B fill:#2d1b4e,stroke:#7b2ff7,color:#fff
+    style C fill:#2d1b4e,stroke:#7b2ff7,color:#fff
+    style D fill:#7b2ff7,stroke:#f107a3,color:#fff
+    style E fill:#2d1b4e,stroke:#7b2ff7,color:#fff
+    style F fill:#f107a3,stroke:#fff,color:#fff
+    style G fill:#f107a3,stroke:#fff,color:#fff
+    style H fill:#f107a3,stroke:#fff,color:#fff
+```
+
+<table>
+<tr>
+<td width="33%" align="center">
+
+### 🧠
+**Dual-Branch**
+<br/><sub>CNN sees texture.<br/>ViT sees structure.<br/>Fusion learns which to trust.</sub>
+
+</td>
+<td width="33%" align="center">
+
+### 🔥
+**Grad-CAM**
+<br/><sub>Hooks the last conv block —<br/>shows *where* the model looked.</sub>
+
+</td>
+<td width="33%" align="center">
+
+### 📊
+**SHAP**
+<br/><sub>DeepExplainer on fused features —<br/>shows *why* it decided.</sub>
+
+</td>
+</tr>
+</table>
+
+<img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" width="100%"/>
+
+## ⚡ &nbsp;Quickstart
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/RiyaJain99/xai-skinnet.git
 cd xai-skinnet
 pip install -r requirements.txt
 ```
 
-On Colab, run that same block in a cell (prefix with `!`). On Kaggle, add
-this repo as a dataset/utility script or just `!pip install -r
-requirements.txt` after cloning.
+> On Colab, run the same block in a cell with `!` prefixes.
 
-## 2. Get the data (HAM10000)
+<details>
+<summary><b>📦 &nbsp;Step 1 — Get the data (HAM10000)</b></summary>
 
-You need a free Kaggle account and API token (`kaggle.json`) either way —
-Kaggle hosts the cleanest copy of HAM10000.
+<br/>
 
-**Easiest path — `kagglehub`** (this is what Kaggle's own "Copy code" button
-on the dataset page gives you):
-```python
-import kagglehub
-path = kagglehub.dataset_download("kmader/skin-cancer-mnist-ham10000")
-print("Path to dataset files:", path)
-```
-`data/download_data.py` now uses this automatically if `kagglehub` is
-installed (`pip install kagglehub`, already in requirements.txt), and
-copies the files into `--out` so `--data-root` stays predictable:
+You need a free Kaggle account and an API token (`kaggle.json`) — Kaggle hosts the
+cleanest copy of HAM10000.
 
 ```bash
-# Colab: upload kaggle.json first, e.g.
+# Colab: upload kaggle.json first
 #   from google.colab import files; files.upload()
 #   mkdir -p ~/.kaggle && mv kaggle.json ~/.kaggle/ && chmod 600 ~/.kaggle/kaggle.json
 
 python data/download_data.py --dataset ham10000 --out data/raw
 ```
 
-This downloads and unzips into `data/raw/`, giving you:
+Gives you:
+
 ```
 data/raw/
-  HAM10000_metadata.csv
-  HAM10000_images_part_1/
-  HAM10000_images_part_2/
+├── HAM10000_metadata.csv
+├── HAM10000_images_part_1/
+└── HAM10000_images_part_2/
 ```
 
-Kaggle Notebooks: skip the script entirely — instead add the
-`kmader/skin-cancer-mnist-ham10000` dataset via "Add Data" in the UI (or
-just run the `kagglehub` snippet above, no token needed inside a Kaggle
-Notebook), and point `--data-root` at
-`/kaggle/input/skin-cancer-mnist-ham10000` in the commands below.
+**On Kaggle Notebooks:** skip the script entirely. Add `kmader/skin-cancer-mnist-ham10000`
+via *Add Data*, then point `--data-root` at `/kaggle/input/skin-cancer-mnist-ham10000`.
 
-ISIC 2019 (optional, for the cross-dataset generalization numbers) is
-fetched the same way with `--dataset isic2019`.
+**ISIC 2019** (optional, for cross-dataset generalization numbers):
+`--dataset isic2019`.
 
-**Where to actually run training:** this repo (including everything in
-this fork — the metadata branch, calibration, TTA, XAI faithfulness eval)
-was developed and unit-tested here against a small synthetic dataset (see
-"Testing" below) since this environment has no GPU and no network access
-to Kaggle. Real training needs to happen somewhere with both — **Kaggle
-Notebooks is the path of least friction**: GPU is free, `kagglehub`/Kaggle
-auth is automatic, and you can add this repo as a GitHub-linked notebook
-or just upload the zip. Colab (upload `kaggle.json` once) works equally
-well. A quickstart cell sequence for either:
+</details>
 
-```python
-# Cell 1 — get the code (skip if you uploaded/cloned it another way)
-!git clone <your-repo-url> && cd xai-skinnet
+<details>
+<summary><b>🚂 &nbsp;Step 2 — Train</b></summary>
 
-# Cell 2 — dependencies
-!pip install -r requirements.txt -q
-
-# Cell 3 — data (Kaggle Notebooks: this needs no token at all)
-import kagglehub
-data_path = kagglehub.dataset_download("kmader/skin-cancer-mnist-ham10000")
-print(data_path)
-
-# Cell 4 — train (point --data-root at whatever Cell 3 printed)
-!python -m src.train --config configs/config.yaml --data-root {data_path}
-```
-
-## 3. Train
+<br/>
 
 ```bash
 python -m src.train --config configs/config.yaml --data-root data/raw
 ```
 
-Key knobs live in `configs/config.yaml` (epochs, batch size, LR, freeze
-schedule, output dir). Checkpoints and logs land in `runs/<run_name>/`,
-including `test_split.csv` **and `val_split.csv`** (the latter is what
-`src/calibrate.py` fits temperature scaling on — see below).
+Checkpoints and logs land in `runs/<run_name>/`. Knobs live in `configs/config.yaml`.
 
-Training follows the paper's recipe: AdamW (lr=2e-4, wd=1e-4), cosine
-annealing, 60 epochs, batch size 32, weighted cross-entropy for class
-imbalance, and the first 10 epochs train only the fusion head + last
-block of each branch (lower layers frozen) before unfreezing.
+| Setting | Value |
+|:--|:--|
+| Optimizer | AdamW — `lr=2e-4`, `wd=1e-4` |
+| Schedule | Cosine annealing, 60 epochs |
+| Batch size | 32 @ 224×224 |
+| Loss | Weighted cross-entropy (class imbalance) |
+| Warmup | First 10 epochs: fusion head + last block of each branch only |
 
-**Note on "SMOTE":** true pixel-space SMOTE on dermoscopic images is not
-meaningful (interpolating raw images produces garbage). What the
-pipeline actually does — and what the paper's numbers reflect — is
-minority-class oversampling via a `WeightedRandomSampler` combined with
-weighted cross-entropy loss, which is the standard practical stand-in
-and gives the equivalent effect on convergence. This is implemented in
-`src/datasets/ham10000.py::make_sampler`.
+> [!IMPORTANT]
+> **On "SMOTE".** True pixel-space SMOTE on dermoscopic images is not meaningful —
+> interpolating raw images produces garbage. What the pipeline actually does, and what the
+> paper's numbers reflect, is minority-class oversampling via a `WeightedRandomSampler`
+> combined with weighted cross-entropy. That's the standard practical stand-in and gives the
+> equivalent effect on convergence. See `src/datasets/ham10000.py::make_sampler`.
 
-## 4. Evaluate
+</details>
 
-```bash
-python -m src.evaluate --config configs/config.yaml --checkpoint runs/<run_name>/best.pt --data-root data/raw
-```
+<details>
+<summary><b>📈 &nbsp;Step 3 — Evaluate</b></summary>
 
-Prints accuracy, macro precision/recall/F1, macro-AUC (one-vs-rest), and
-**Expected Calibration Error (ECE)**, and writes a confusion matrix image
-+ per-class table — matching Tables I and III in the paper.
-
-Two optional flags:
-- `--tta` — averages predictions over horizontal-flip/vertical-flip/90°
-  rotation views for a small, standard accuracy bump at extra inference
-  cost. Off by default so baseline numbers stay comparable to a plain
-  single-pass run.
-- `--temperature-file` — applies a fitted temperature (see below) before
-  computing metrics. Auto-detected from `runs/<run_name>/temperature.json`
-  if you've already run calibration; pass explicitly to override.
-
-### Calibration (temperature scaling)
-
-A model can be accurate and still badly overconfident — a "92% confident"
-prediction should be right about 92% of the time, which matters for a
-clinician-facing tool. Fit a single scalar temperature on the held-out
-validation split (never the test split, to avoid leakage into the
-reported numbers):
+<br/>
 
 ```bash
-python -m src.calibrate --checkpoint runs/<run_name>/best.pt --data-root data/raw
+python -m src.evaluate \
+  --config configs/config.yaml \
+  --checkpoint runs/<run_name>/best.pt \
+  --data-root data/raw
 ```
 
-Reports ECE before/after and writes `runs/<run_name>/temperature.json`,
-which `src/evaluate.py` then picks up automatically.
+Prints accuracy, macro precision / recall / F1, macro-AUC (one-vs-rest), and writes a
+confusion matrix image plus a per-class table — matching **Tables I and III** in the paper.
 
-## 5. Explainability (Grad-CAM + SHAP)
+</details>
+
+<details>
+<summary><b>🔍 &nbsp;Step 4 — Explainability</b></summary>
+
+<br/>
 
 ```bash
-python -m src.explainability.gradcam --checkpoint runs/<run_name>/best.pt --image path/to/lesion.jpg
-python -m src.explainability.shap_explain --checkpoint runs/<run_name>/best.pt --data-root data/raw --n-background 50
+# Where did it look?
+python -m src.explainability.gradcam \
+  --checkpoint runs/<run_name>/best.pt \
+  --image path/to/lesion.jpg
+
+# Why did it decide?
+python -m src.explainability.shap_explain \
+  --checkpoint runs/<run_name>/best.pt \
+  --data-root data/raw \
+  --n-background 50
 ```
 
-Grad-CAM hooks the last conv block of the EfficientNet-B4 branch and
-saves an overlay heatmap. SHAP uses `DeepExplainer` on the fusion-layer
-output with a background sample drawn from the training set, and saves
-a waterfall plot per queried image.
+Grad-CAM hooks the last conv block of the EfficientNet-B4 branch and saves an overlay
+heatmap. SHAP runs `DeepExplainer` on the fusion-layer output with a background sample
+drawn from the training set, saving a waterfall plot per queried image.
 
-### Does the explanation actually track what the model uses?
+</details>
 
-Objective 5 (Section 3 of the PDF) calls for validating explanation
-quality against dermatologist-annotated ground truth — that's a real
-human-annotation study, out of scope for now. What's implemented instead
-is the standard *automatic* faithfulness check used in the XAI literature
-when annotations aren't available yet: Grad-CAM deletion/insertion AUC
-(Petsiuk et al., RISE, 2018) and a SHAP ablation-consistency check
-(Spearman correlation between |SHAP value| and the actual prediction
-change when that feature is zeroed out):
+<img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" width="100%"/>
+
+## 🌐 &nbsp;Live Demo Stack
+
+Upload a lesion in the browser → get the predicted class, a Grad-CAM overlay, and the top
+SHAP contributions.
+
+<details>
+<summary><b>🧪 &nbsp;One-time — export a SHAP background</b></summary>
+
+<br/>
+
+The backend needs a small precomputed set of background feature vectors so it can run SHAP
+at request time without shipping the raw dataset to the server.
 
 ```bash
-python -m src.explainability.xai_eval --checkpoint runs/<run_name>/best.pt \
-    --data-root data/raw --test-csv runs/<run_name>/test_split.csv --n-samples 30
+python -m scripts.export_shap_background \
+  --checkpoint runs/xai_skinnet_v1/best.pt \
+  --data-root data/raw
 ```
 
-Writes `xai_faithfulness.json` + a deletion/insertion curve plot next to
-the checkpoint. This gives you a real number for the paper/review instead
-of "the heatmaps look plausible."
+Writes `runs/xai_skinnet_v1/shap_background.pt`. Skip it and `/predict` still works — it just
+omits `shap_top_features`.
 
-## 6. Metadata branch (optional multimodal extension)
+</details>
 
-Section 12's Future Work calls out incorporating patient metadata (age,
-lesion location, Fitzpatrick skin type) as an optional input — HAM10000's
-own metadata CSV already has age/sex/localization, so this is implemented
-as an opt-in third branch rather than left for later. Off by default (the
-architecture in the PDF is the plain CNN+ViT pair); enable it with:
+<details>
+<summary><b>⚙️ &nbsp;Backend — FastAPI</b></summary>
 
-```yaml
-model:
-  use_metadata: true
-  metadata_embed_dim: 64
-```
-
-When enabled, age/sex/localization are encoded into a small fixed vector
-(`src/datasets/ham10000.py::encode_metadata_row`) and fused via a 3-way
-softmax attention gate (`AttentionGatedFusion3` in `src/models/fusion.py`)
-alongside the CNN and ViT branches — the natural generalization of the
-paper's 2-way gate. `src/train.py`/`src/evaluate.py` use it automatically
-once the flag is on; nothing else changes on your end. Grad-CAM's overlay
-is computed with a neutral default metadata vector regardless (the
-pytorch-grad-cam library has no hook for extra forward-pass arguments),
-noted explicitly in the code and in the backend's `/predict` response
-path — SHAP and the prediction itself do use real supplied metadata.
-
-## 7. Deployment (optional web demo)
-
-A minimal full-stack demo: upload a lesion image in the browser, get back
-the predicted class, a Grad-CAM heatmap overlay, and the top SHAP feature
-contributions.
-
-### One-time: export a SHAP background
-
-The backend needs a small precomputed set of "background" feature vectors
-to run SHAP at request time (so it doesn't need the raw dataset on the
-server). Run this once after training:
+<br/>
 
 ```bash
-python -m scripts.export_shap_background --checkpoint runs/xai_skinnet_v1/best.pt --data-root data/raw
-```
-
-This writes `runs/xai_skinnet_v1/shap_background.pt`. If you skip this
-step, `/predict` still works — it just omits `shap_top_features`.
-
-### Backend (FastAPI)
-
-```bash
-pip install -r backend/requirements.txt   # on top of the main requirements.txt
+pip install -r backend/requirements.txt
 uvicorn backend.app:app --reload --port 8000
 ```
 
-Run this from the repo root (not inside `backend/`) so `src` and `backend`
-are both importable. Config is via environment variables, all optional:
+Run from the **repo root** (not inside `backend/`) so `src` and `backend` are both importable.
 
 ```bash
+# all optional
 export XAI_CONFIG_PATH=configs/config.yaml
 export XAI_CHECKPOINT_PATH=runs/xai_skinnet_v1/best.pt
 export XAI_SHAP_BACKGROUND_PATH=runs/xai_skinnet_v1/shap_background.pt
 ```
 
-Check it's up: `curl http://localhost:8000/health`
+Health check: `curl http://localhost:8000/health`
 
-`POST /predict` takes a multipart `file` field (plus optional `age`,
-`sex`, `localization` form fields, used only if the loaded checkpoint was
-trained with `model.use_metadata: true` — see Section 6) and returns:
+`POST /predict` — multipart `file` field:
+
 ```json
 {
   "predicted_class": "MEL",
   "confidence": 0.92,
   "probabilities": { "MEL": 0.92, "NV": 0.03, "...": "..." },
   "gradcam_image_base64": "<base64 PNG>",
-  "shap_top_features": [{ "feature": "fused_dim_146", "shap_value": 0.31 }, "..."]
+  "shap_top_features": [{ "feature": "fused_dim_146", "shap_value": 0.31 }]
 }
 ```
 
-### Frontend (React + Vite)
+</details>
+
+<details>
+<summary><b>🎨 &nbsp;Frontend — React + Vite</b></summary>
+
+<br/>
 
 ```bash
 cd frontend
 npm install
-cp .env.example .env      # points VITE_API_URL at your backend
+cp .env.example .env      # set VITE_API_URL
 npm run dev               # http://localhost:5173
 ```
 
-`npm run build` produces a static `dist/` you can serve from anything
-(nginx, Vercel, GitHub Pages, etc.) — just make sure `VITE_API_URL` points
-at wherever the FastAPI backend actually runs.
+`npm run build` produces a static `dist/` servable from anything — nginx, Vercel, GitHub
+Pages — just point `VITE_API_URL` at wherever FastAPI actually runs.
 
-**Before any real deployment:** the backend's CORS is wide open
-(`allow_origins=["*"]`) for local dev convenience — narrow it to your
-actual frontend's origin in `backend/app.py` first, and note this demo
-has no auth, so don't expose it publicly as-is with patient data.
+</details>
 
-## Repo layout
+> [!WARNING]
+> **Before any real deployment.** The backend's CORS is wide open (`allow_origins=["*"]`) for
+> local dev convenience — narrow it to your frontend's origin in `backend/app.py`. This demo
+> also has **no authentication**, so don't expose it publicly as-is with patient data.
+
+<img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" width="100%"/>
+
+## 📁 &nbsp;Repo Layout
 
 ```
-configs/config.yaml         hyperparameters, paths, run name
-data/download_data.py       Dataset fetcher (kagglehub, falls back to kaggle CLI)
-src/datasets/ham10000.py    Dataset, transforms, class-imbalance sampler, metadata encoding
-src/models/cnn_branch.py    EfficientNet-B4 feature extractor
-src/models/vit_branch.py    ViT-B/16 feature extractor
-src/models/fusion.py        Attention-gated fusion (2-way, and 3-way for metadata)
-src/models/metadata_branch.py  Optional age/sex/localization MLP encoder
-src/models/xai_skinnet.py   Full model (branches + fusion + head)
-src/train.py                Training loop, freeze/unfreeze schedule
-src/evaluate.py             Metrics: accuracy/F1/AUC/ECE + confusion matrix, TTA, calibration
-src/calibrate.py            Temperature-scaling calibration (Guo et al. 2017)
-src/explainability/gradcam.py     Grad-CAM
-src/explainability/shap_explain.py SHAP DeepExplainer + waterfall plots
-src/explainability/xai_eval.py    Grad-CAM deletion/insertion + SHAP ablation-consistency
-src/utils.py                 Seeding, config loading, ECE, misc helpers
-scripts/export_shap_background.py Precompute SHAP background (run once post-training)
-backend/app.py               FastAPI app: /health, /predict
-backend/inference.py         Loads checkpoint, serves prediction + Grad-CAM + SHAP
-frontend/                    React + Vite upload/results UI
-tests/                       Pytest suite against a synthetic HAM10000-shaped dataset
+xai-skinnet/
+│
+├── 📐 configs/
+│   └── config.yaml                    hyperparameters, paths, run name
+│
+├── 📊 data/
+│   └── download_data.py               Kaggle dataset fetcher
+│
+├── 🧠 src/
+│   ├── datasets/
+│   │   └── ham10000.py                dataset, transforms, imbalance sampler
+│   ├── models/
+│   │   ├── cnn_branch.py              EfficientNet-B4 feature extractor
+│   │   ├── vit_branch.py              ViT-B/16 feature extractor
+│   │   ├── fusion.py                  attention-gated fusion module
+│   │   └── xai_skinnet.py             full model: branches + fusion + head
+│   ├── explainability/
+│   │   ├── gradcam.py                 Grad-CAM
+│   │   └── shap_explain.py            SHAP DeepExplainer + waterfall plots
+│   ├── train.py                       training loop, freeze/unfreeze schedule
+│   ├── evaluate.py                    accuracy / F1 / AUC + confusion matrix
+│   └── utils.py                       seeding, config loading, helpers
+│
+├── 🔧 scripts/
+│   └── export_shap_background.py      precompute SHAP background (once, post-training)
+│
+├── 🚀 backend/
+│   ├── app.py                         FastAPI: /health, /predict
+│   └── inference.py                   checkpoint load → prediction + Grad-CAM + SHAP
+│
+└── 🎨 frontend/                        React + Vite upload/results UI
 ```
 
-## Testing
+<img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" width="100%"/>
 
-The full pipeline — manifest building, stratified splitting, the metadata
-encoding, the model (with and without the metadata branch), a real
-forward+backward training step, Grad-CAM, SHAP, the faithfulness metrics,
-and calibration — is exercised by a pytest suite against a small synthetic
-dataset generated on the fly, so it runs without the real ~3GB download or
-a GPU (a CPU forward pass through the full hybrid model takes well under a
-second once built):
+## 🖥️ &nbsp;Compute Expectations
 
-```bash
-pip install pytest
-python -m pytest tests/ -q
-```
+| GPU | 60-epoch run | Notes |
+|:--|:--|:--|
+| **A100** | paper baseline | reference numbers |
+| **T4** (free Colab) | several hours | reduce `epochs` for a first working pass |
+| **P100 / T4** | — | `batch_size: 32` @ 224×224 fits comfortably |
+| **< 12 GB VRAM** | — | drop `batch_size` to 16 if CUDA OOM |
 
-This is the same idea as the "tested against a synthetic sample dataset"
-note in the Project Review PDF (Section 8.1), just checked in as a
-repeatable suite instead of a one-off manual run — useful both for CI and
-as a fast way to sanity-check any future change before spending GPU hours
-on a real training run.
+<img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" width="100%"/>
 
-## Compute expectations
+<div align="center">
 
-- Full 60-epoch run: a T4 (free Colab) will take considerably longer
-  than the paper's A100 run — budget several hours, or reduce `epochs`
-  in the config for a first working pass before a full run.
-- `batch_size: 32` at 224×224 fits comfortably on a T4/P100; drop to 16
-  if you hit CUDA OOM on a smaller GPU.
+### 👩‍💻 &nbsp;Team
+
+<table>
+<tr>
+<td align="center" width="33%"><b>Suhani Singhania</b><br/><sub>VIT Vellore</sub></td>
+<td align="center" width="33%"><b>Kashvi Agrawal</b><br/><sub>VIT Vellore</sub></td>
+<td align="center" width="33%"><b>Riya Jain</b><br/><sub><a href="https://github.com/RiyaJain99">@RiyaJain99</a></sub></td>
+</tr>
+</table>
+
+<br/>
+
+<sub>Research / educational use only. Not a medical device. Not for clinical diagnosis.</sub>
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:f107a3,50:7b2ff7,100:1a0b2e&height=140&section=footer" width="100%"/>
+
+</div>
