@@ -6,8 +6,8 @@ Run from the repo root (so `src` and `backend` are both importable):
 
 Config via environment variables (all optional, sensible defaults shown):
     XAI_CONFIG_PATH=configs/config.yaml
-    XAI_CHECKPOINT_PATH=runs/xai_skinnet_v1/best.pt
-    XAI_SHAP_BACKGROUND_PATH=runs/xai_skinnet_v1/shap_background.pt
+    XAI_CHECKPOINT_PATH=runs/xai_skinnet_v2_meta/best.pt
+    XAI_SHAP_BACKGROUND_PATH=runs/xai_skinnet_v2_meta/shap_background.pt
 """
 import os
 
@@ -17,7 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.inference import InferenceEngine
 
 CONFIG_PATH = os.environ.get("XAI_CONFIG_PATH", "configs/config.yaml")
-CHECKPOINT_PATH = os.environ.get("XAI_CHECKPOINT_PATH", "runs/xai_skinnet_v1/best.pt")
+CHECKPOINT_PATH = os.environ.get("XAI_CHECKPOINT_PATH", "runs/xai_skinnet_v2_meta/best.pt")
 SHAP_BACKGROUND_PATH = os.environ.get("XAI_SHAP_BACKGROUND_PATH")  # None -> inferred from checkpoint dir
 
 app = FastAPI(title="XAI-SkinNet API", version="1.0")

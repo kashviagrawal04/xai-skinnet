@@ -1,0 +1,41 @@
+run_name: xai_skinnet_v1
+seed: 42
+
+data:
+  image_size: 224         # required by ViT-B/16 (do not change)
+  num_classes: 7
+  class_names: ["MEL", "NV", "BCC", "AKIEC", "BKL", "DF", "VASC"]
+  train_split: 0.8
+  val_split: 0.1
+  test_split: 0.1
+  imagenet_mean: [0.485, 0.456, 0.406]
+  imagenet_std: [0.229, 0.224, 0.225]
+
+model:
+  cnn_backbone: efficientnet_b4
+  vit_backbone: vit_base_patch16_224
+  cnn_feat_dim: 1792
+  vit_feat_dim: 768
+  fusion_dim: 512
+  dropout: 0.4
+  pretrained: true
+  use_metadata: false
+  metadata_embed_dim: 64
+
+train:
+  epochs: 3               # 3 epochs — feasible on CPU
+  batch_size: 2           # smallest batch to fit CPU RAM
+  lr: 2.0e-4
+  weight_decay: 1.0e-4
+  freeze_epochs: 1
+  num_workers: 0          # must be 0 on Windows without GPU
+  output_dir: runs
+  log_every: 50
+  early_stop_patience: 3
+
+augmentation:
+  hflip_p: 0.5
+  vflip_p: 0.5
+  rotation_deg: 30
+  color_jitter: 0.2
+  random_crop_scale: [0.8, 1.0]

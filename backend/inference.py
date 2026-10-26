@@ -7,10 +7,12 @@ Loads once at API startup — see backend/app.py.
 """
 import base64
 import io
+import json
 from pathlib import Path
 
 import numpy as np
 import torch
+import torchvision.transforms.functional as TF
 from PIL import Image
 
 from src.datasets.ham10000 import get_transforms
@@ -22,16 +24,37 @@ class InferenceEngine:
     def __init__(
         self,
         config_path: str = "configs/config.yaml",
-        checkpoint_path: str = "runs/xai_skinnet_v1/best.pt",
+        checkpoint_path: str = "runs/xai_skinnet_v2_meta/best.pt",
         shap_background_path: str | None = None,
+        use_tta: bool = True,
     ):
         self.cfg = load_config(config_path)
         self.device = get_device()
 
-        ckpt = torch.load(checkpoint_path, map_location=self.device)
+        ckpt = torch.load(checkpoint_path, map_location=self.device, weights_only=False)
         self.model = XAISkinNet(ckpt.get("cfg", self.cfg)).to(self.device)
         self.model.load_state_dict(ckpt["model_state"])
         self.model.eval()
+
+        # Calibrated temperature fitted by src/calibrate.py (sits next to best.pt).
+        # Applied to logits so the confidence shown to users matches what was
+        # evaluated (ECE 0.024 after calibration vs 0.061 before).
+        self.temperature = 1.0
+        temp_path = Path(checkpoint_path).parent / "temperature.json"
+        if temp_path.exists():
+            self.temperature = float(json.loads(temp_path.read_text())["temperature"])
+            print(f"Applying calibrated temperature T={self.temperature:.4f}")
+        else:
+            print(f"No temperature.json at {temp_path} - using T=1.0 (uncalibrated).")
+
+        # Same flip/rotate views as `src.evaluate --tta` (90.1% vs 89.7% test acc).
+        self.use_tta = use_tta
+        self._views = [
+            lambda t: t,
+            lambda t: TF.hflip(t),
+            lambda t: TF.vflip(t),
+            lambda t: torch.rot90(t, k=1, dims=[-2, -1]),
+        ] if use_tta else [lambda t: t]
 
         self.class_names = self.cfg["data"]["class_names"]
         self.transform = get_transforms(self.cfg, train=False)
@@ -82,8 +105,11 @@ class InferenceEngine:
             ).unsqueeze(0).to(self.device)
 
         with torch.no_grad():
-            logits = self.model(tensor, metadata=metadata)
-            probs = torch.softmax(logits, dim=1)[0].cpu().numpy()
+            probs_sum = 0
+            for view in self._views:
+                logits = self.model(view(tensor), metadata=metadata) / self.temperature
+                probs_sum = probs_sum + torch.softmax(logits, dim=1)
+            probs = (probs_sum / len(self._views))[0].cpu().numpy()
         pred_idx = int(probs.argmax())
 
         result = {

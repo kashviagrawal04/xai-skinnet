@@ -1,8 +1,8 @@
-run_name: xai_skinnet_v1
+run_name: xai_skinnet_v2
 seed: 42
 
 data:
-  image_size: 224         # required by ViT-B/16 (do not change)
+  image_size: 224
   num_classes: 7
   class_names: ["MEL", "NV", "BCC", "AKIEC", "BKL", "DF", "VASC"]
   train_split: 0.8
@@ -12,26 +12,35 @@ data:
   imagenet_std: [0.229, 0.224, 0.225]
 
 model:
-  cnn_backbone: efficientnet_b4
-  vit_backbone: vit_base_patch16_224
+  cnn_backbone: efficientnet_b4        # timm model name
+  vit_backbone: vit_base_patch16_224   # timm model name
   cnn_feat_dim: 1792
   vit_feat_dim: 768
   fusion_dim: 512
   dropout: 0.4
   pretrained: true
+  # Optional third branch: clinical metadata (age/sex/localization from
+  # HAM10000_metadata.csv), fused via a 3-way attention gate instead of
+  # the paper's plain CNN+ViT pair. Off by default to match the
+  # architecture described in the Project Review PDF; flip to true to
+  # run it as an ablation/extension. See README "Metadata branch".
   use_metadata: false
   metadata_embed_dim: 64
 
 train:
-  epochs: 3               # 3 epochs — feasible on CPU
-  batch_size: 2           # smallest batch to fit CPU RAM
+  epochs: 60
+  batch_size: 32
   lr: 2.0e-4
   weight_decay: 1.0e-4
-  freeze_epochs: 1
-  num_workers: 0          # must be 0 on Windows without GPU
+  freeze_epochs: 5        # epochs where only fusion head + last block/branch train
+  num_workers: 4
   output_dir: runs
   log_every: 50
-  early_stop_patience: 3
+  early_stop_patience: 12
+  imbalance: sampler        # sampler | loss | both  (never stack both by default)
+  label_smoothing: 0.1
+  backbone_lr_mult: 0.1     # pretrained backbones learn at lr*0.1, head at lr
+  select_metric: macro_f1   # pick best.pt by macro-F1 (val_acc favours NV)
 
 augmentation:
   hflip_p: 0.5

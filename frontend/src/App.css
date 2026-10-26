@@ -506,3 +506,12 @@ body {
     animation: none;
   }
 }
+
+.meta { margin-top: 14px; }
+.meta__title { font-size: 0.85rem; margin: 0 0 6px; opacity: 0.9; }
+.meta__title span { opacity: 0.6; font-weight: 400; }
+.meta__row { display: flex; gap: 8px; flex-wrap: wrap; }
+.meta__row input, .meta__row select {
+  flex: 1 1 90px; padding: 8px 10px; border-radius: 8px; font: inherit;
+  border: 1px solid rgba(128,128,128,0.4); background: transparent; color: inherit;
+}

@@ -4,7 +4,7 @@ after training — so the deployed backend doesn't need the raw HAM10000
 images or metadata at inference time, just this one small tensor file.
 
 Usage:
-    python -m scripts.export_shap_background --checkpoint runs/xai_skinnet_v1/best.pt \
+    python -m scripts.export_shap_background --checkpoint runs/xai_skinnet_v2_meta/best.pt \
         --data-root data/raw --n-background 50
 """
 import argparse
@@ -30,7 +30,7 @@ def main():
     cfg = load_config(args.config)
     device = get_device()
 
-    ckpt = torch.load(args.checkpoint, map_location=device)
+    ckpt = torch.load(args.checkpoint, map_location=device, weights_only=False)
     model = XAISkinNet(ckpt.get("cfg", cfg)).to(device)
     model.load_state_dict(ckpt["model_state"])
     model.eval()

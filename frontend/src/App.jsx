@@ -219,6 +219,36 @@ export default function App() {
   const [result, setResult] = useState(null)
   const [showGradcam, setShowGradcam] = useState(true)
   const [isDemo, setIsDemo] = useState(false)
+  // Optional clinical metadata (the deployed checkpoint was trained with it).
+  const [age, setAge] = useState('')
+  const [sex, setSex] = useState('')
+  const [localization, setLocalization] = useState('')
+
+  const runAnalysis = useCallback(async (f) => {
+    if (!f) return
+    setLoading(true)
+    setError(null)
+    setResult(null)
+    try {
+      const formData = new FormData()
+      formData.append('file', f)
+      if (age !== '') formData.append('age', age)
+      if (sex) formData.append('sex', sex)
+      if (localization) formData.append('localization', localization)
+      const res = await fetch(`${API_URL}/predict`, { method: 'POST', body: formData })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.detail || `Request failed (${res.status})`)
+      }
+      const data = await res.json()
+      setResult(data)
+      setShowGradcam(true)
+    } catch (e) {
+      setError(e.message || 'Something went wrong reaching the model server.')
+    } finally {
+      setLoading(false)
+    }
+  }, [age, sex, localization])
 
   const handleFile = useCallback((f) => {
     setFile(f)
@@ -226,7 +256,8 @@ export default function App() {
     setError(null)
     setIsDemo(false)
     setPreviewUrl(URL.createObjectURL(f))
-  }, [])
+    runAnalysis(f) // analyse automatically as soon as an image is chosen
+  }, [runAnalysis])
 
   const handleDemo = useCallback(() => {
     setFile(null)
@@ -242,29 +273,6 @@ export default function App() {
       setLoading(false)
     }, 900)
   }, [])
-
-  const handleAnalyze = async () => {
-    if (!file) return
-    setLoading(true)
-    setError(null)
-    setResult(null)
-    try {
-      const formData = new FormData()
-      formData.append('file', file)
-      const res = await fetch(`${API_URL}/predict`, { method: 'POST', body: formData })
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        throw new Error(body.detail || `Request failed (${res.status})`)
-      }
-      const data = await res.json()
-      setResult(data)
-      setShowGradcam(true)
-    } catch (e) {
-      setError(e.message || 'Something went wrong reaching the model server.')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const gradcamUrl = result?.gradcam_image_base64
     ? `data:image/png;base64,${result.gradcam_image_base64}`
@@ -315,18 +323,38 @@ export default function App() {
                   </button>
                 </div>
               )}
+              {!isDemo && (
+                <div className="meta">
+                  <p className="meta__title">Patient details <span>(optional, improves accuracy)</span></p>
+                  <div className="meta__row">
+                    <input
+                      type="number" min="0" max="100" placeholder="Age"
+                      value={age} onChange={(e) => setAge(e.target.value)}
+                    />
+                    <select value={sex} onChange={(e) => setSex(e.target.value)}>
+                      <option value="">Sex</option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                    </select>
+                    <select value={localization} onChange={(e) => setLocalization(e.target.value)}>
+                      <option value="">Body site</option>
+                      {['back','lower extremity','trunk','upper extremity','abdomen','face','chest','foot','neck','scalp','hand','ear','genital','acral'].map((l) => (
+                        <option key={l} value={l}>{l}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
               <button
                 className="analyze-btn"
-                onClick={isDemo ? handleDemo : handleAnalyze}
+                onClick={isDemo ? handleDemo : () => runAnalysis(file)}
                 disabled={loading}
               >
                 {loading
                   ? 'Analyzing…'
                   : isDemo
                     ? 'Try another sample'
-                    : result
-                      ? 'Re-analyze'
-                      : 'Analyze image'}
+                    : 'Re-analyze with these details'}
               </button>
             </>
           )}
